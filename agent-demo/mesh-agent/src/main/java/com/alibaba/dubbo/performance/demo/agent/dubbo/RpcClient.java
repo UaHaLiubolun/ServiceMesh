@@ -1,16 +1,11 @@
 package com.alibaba.dubbo.performance.demo.agent.dubbo;
 
-import com.alibaba.dubbo.performance.demo.agent.dubbo.model.JsonUtils;
-import com.alibaba.dubbo.performance.demo.agent.dubbo.model.Request;
-import com.alibaba.dubbo.performance.demo.agent.dubbo.model.RpcFuture;
-import com.alibaba.dubbo.performance.demo.agent.dubbo.model.RpcInvocation;
-import com.alibaba.dubbo.performance.demo.agent.dubbo.model.RpcRequestHolder;
+import com.alibaba.dubbo.performance.demo.agent.dubbo.model.*;
 
 import com.alibaba.dubbo.performance.demo.agent.registry.IRegistry;
 import io.netty.channel.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStreamWriter;
@@ -32,7 +27,7 @@ public class RpcClient {
         RpcInvocation invocation = new RpcInvocation();
         invocation.setMethodName(method);
         invocation.setAttachment("path", interfaceName);
-        invocation.setParameterTypes(parameterTypesString);    // Dubbo内部用"Ljava/lang/String"来表示参数类型是String
+        invocation.setParameterTypes(parameterTypesString);
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         PrintWriter writer = new PrintWriter(new OutputStreamWriter(out));

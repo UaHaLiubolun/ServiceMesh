@@ -5,11 +5,17 @@ import com.alibaba.dubbo.performance.demo.agent.registry.Endpoint;
 import com.alibaba.dubbo.performance.demo.agent.registry.EtcdRegistry;
 import com.alibaba.dubbo.performance.demo.agent.registry.IRegistry;
 import okhttp3.*;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.DefaultRequest;
+import org.asynchttpclient.ListenableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.context.request.async.DeferredResult;
 
 import java.io.IOException;
 import java.util.List;
@@ -19,8 +25,11 @@ import java.util.Random;
 public class HelloController {
 
     private Logger logger = LoggerFactory.getLogger(HelloController.class);
-    
+
     private IRegistry registry = new EtcdRegistry(System.getProperty("etcd.url"));
+
+    private AsyncHttpClient asyncHttpClient = org.asynchttpclient.Dsl.asyncHttpClient();
+
 
     private RpcClient rpcClient = new RpcClient(registry);
     private Random random = new Random();
@@ -51,7 +60,7 @@ public class HelloController {
         return (byte[]) result;
     }
 
-    public Integer consumer(String interfaceName,String method,String parameterTypesString,String parameter) throws Exception {
+    public DeferredResult<ResponseEntity> consumer(String interfaceName,String method,String parameterTypesString,String parameter) throws Exception {
 
         if (null == endpoints){
             synchronized (lock){
@@ -64,25 +73,55 @@ public class HelloController {
         // 简单的负载均衡，随机取一个
         Endpoint endpoint = endpoints.get(random.nextInt(endpoints.size()));
 
-        String url =  "http://" + endpoint.getHost() + ":" + endpoint.getPort();
+        String url =  "http://" + endpoint.getHost() + ":" + (endpoint.getPort() + 50);
 
-        RequestBody requestBody = new FormBody.Builder()
-                .add("interface",interfaceName)
-                .add("method",method)
-                .add("parameterTypesString",parameterTypesString)
-                .add("parameter",parameter)
+        org.asynchttpclient.Request request = org.asynchttpclient.Dsl.post(url)
+                .addFormParam("interface", interfaceName)
+                .addFormParam("method", method)
+                .addFormParam("parameterTypesString", parameterTypesString)
+                .addFormParam("parameter", parameter)
                 .build();
 
-        Request request = new Request.Builder()
-                .url(url)
-                .post(requestBody)
-                .build();
+        DeferredResult<ResponseEntity> result = new DeferredResult<>();
 
-        try (Response response = httpClient.newCall(request).execute()) {
-            if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
-            byte[] bytes = response.body().bytes();
-            String s = new String(bytes);
-            return Integer.valueOf(s);
-        }
+
+        //
+//        RequestBody requestBody = new FormBody.Builder()
+//                .add("interface",interfaceName)
+//                .add("method",method)
+//                .add("parameterTypesString",parameterTypesString)
+//                .add("parameter",parameter)
+//                .build();
+//
+//        Request request = new Request.Builder()
+//                .url(url)
+//                .post(requestBody)
+//                .build();
+
+        ListenableFuture<org.asynchttpclient.Response> responseFuture = asyncHttpClient.executeRequest(request);
+
+        Runnable callback = () -> {
+            try {
+                String value = responseFuture.get().getResponseBody();
+                ResponseEntity responseEntity = new ResponseEntity(value, HttpStatus.OK);
+                result.setResult(responseEntity);
+            } catch (Exception e){
+                e.printStackTrace();
+            }
+        };
+
+        responseFuture.addListener(callback, null);
+
+        return result;
+
+
+
+
+//        try (Response response = httpClient.newCall(request).execute()) {
+//            if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
+//            byte[] bytes = response.body().bytes();
+//            String s = new String(bytes);
+//            return Integer.valueOf(s);
+//        }
     }
 }

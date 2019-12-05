@@ -1,5 +1,6 @@
 package com.alibaba.dubbo.performance.demo.agent;
 
+import com.alibaba.dubbo.performance.demo.agent.provider.client.ProviderServer;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -12,5 +13,8 @@ public class AgentApp {
 
     public static void main(String[] args) {
         SpringApplication.run(AgentApp.class,args);
+
+        ProviderServer providerServer = new ProviderServer();
+        providerServer.init();
     }
 }
