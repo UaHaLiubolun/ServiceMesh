@@ -1,0 +1,7 @@
+
+nsquid:S2737"WAdd logic to this catch clause or eliminate it and rethrow the exception automatically.(φ™ϋ
+bsquid:CommentedOutCodeLine."<This block of commented-out lines of code should be removed.(φΊΰΡ
+gsquid:CommentedOutCodeLineU"<This block of commented-out lines of code should be removed.(Συ®ÿψÿÿÿÿ
+Bsquid:S1481\"&Remove this unused "s" local variable.(€Όνάψÿÿÿÿ
+Qsquid:S1854\"5Remove this useless assignment to local variable "s".(€Όνάψÿÿÿÿ
+Ysquid:UselessImportCheck"6Remove this unused import 'com.alibaba.fastjson.JSON'.(ΦΆε$

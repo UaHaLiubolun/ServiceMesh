@@ -1,0 +1,12 @@
+
+Psquid:S2130Z"9Use "Integer.parseInt" for this string-to-int conversion.(šƒ¤ï
+Nsquid:S2629<"7Use the built-in formatting to construct this argument.(Ö±¶
+?squid:S1148$"#Use a logger to log this exception.(€ÉÔ…ýÿÿÿÿ
+?squid:S1148G"#Use a logger to log this exception.(¢ò¨½þÿÿÿÿ
+]squid:HiddenFieldCheckT"6Rename "kv" which hides the field declared at line 26.(æò´ÿùÿÿÿÿ
+Xsquid:S3457F"AFormat specifiers should be used instead of string concatenation.(êÖø
+8squid:S1170"!Make this final field static too.(Ü¾„¶
+asquid:S3027V"JPut single-quotes around '/' to use the faster "lastIndexOf(char)" method.(ØÌøê
+Psquid:S2130-"9Use "Integer.parseInt" for this string-to-int conversion.(ø–„¥
+?squid:S11480"#Use a logger to log this exception.(€ÉÔ…ýÿÿÿÿ
+Xsquid:S3457<"AFormat specifiers should be used instead of string concatenation.(Ö±¶

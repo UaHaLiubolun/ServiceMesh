@@ -1,0 +1,7 @@
+
+ssquid:S2629/"\Invoke method(s) only conditionally. Use the built-in formatting to construct this argument.(Á°âù
+Ksquid:S1172"/Remove this unused method parameter "registry".(»Íòåøÿÿÿÿ
+^squid:S00112"FDefine and throw a dedicated exception instead of using a generic one.(¿–žÀ
+nsquid:UselessImportCheck"ERemove this unused import 'org.springframework.stereotype.Component'.(Þ÷Ñ¸ÿÿÿÿÿ
+?squid:S1148:"#Use a logger to log this exception.(€ÉÔ…ýÿÿÿÿ
+Xsquid:S3457/"AFormat specifiers should be used instead of string concatenation.(Á°âù
