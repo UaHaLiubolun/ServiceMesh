@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 
@@ -36,9 +37,9 @@ public class QueueStoreOne extends QueueStore {
 
     long currentHeaderBroker = 0L;
 
-    Map<String, List<Long>> queueHeader = new HashMap<>();
+    Map<String, List<Long>> queueHeader = new ConcurrentHashMap<>();
 
-    Map<String, AtomicLong> queueIndex = new HashMap<>();
+    Map<String, AtomicLong> queueIndex = new ConcurrentHashMap<>();
 
     FileChannel headerFc;
 
@@ -47,6 +48,12 @@ public class QueueStoreOne extends QueueStore {
     FileChannel headerReadFc;
 
     FileChannel bodyReadFc;
+
+    final static int BUFFER_SIZE =  4 * 1024;
+
+    ByteBuffer bodyBuffer = ByteBuffer.allocateDirect(BUFFER_SIZE);
+
+    ByteBuffer headerBuffer = ByteBuffer.allocateDirect(BUFFER_SIZE);
 
     public QueueStoreOne() {
         init();
@@ -65,32 +72,38 @@ public class QueueStoreOne extends QueueStore {
 
 
     @Override
-    synchronized void put(String queueName, byte[] message) {
+    void put(String queueName, byte[] message) {
         try {
-            long headerOffset = getHeaderOffset(queueName, true);
-            ByteBuffer headerBuffer = ByteBuffer.allocateDirect(HEADER_LENGTH);
-            long bodyPosition = bodyFc.position();
-            headerFc.position(headerOffset);
-            headerBuffer.putShort((short) message.length);
-            headerBuffer.putLong(bodyPosition);
-            headerBuffer.flip();
-            headerFc.write(headerBuffer);
-            ByteBuffer bodyBuffer = ByteBuffer.allocateDirect(message.length);
-            bodyBuffer.put(message);
-            bodyBuffer.flip();
-            bodyFc.write(bodyBuffer);
+            long headerOffset = getHeaderOffset(queueName);
+            synchronized (this) {
+                if ((bodyBuffer.position() + message.length) > BUFFER_SIZE) {
+                    bodyBuffer.flip();
+                    bodyFc.write(bodyBuffer);
+                }
+                long bodyPosition = bodyFc.position();
+                ByteBuffer headerBuffer = ByteBuffer.allocateDirect(HEADER_LENGTH);
+                headerBuffer.putShort((short) message.length);
+                headerBuffer.putLong(bodyPosition);
+                headerBuffer.flip();
+                headerFc.position(headerOffset);
+                headerFc.write(headerBuffer);
+                ByteBuffer bodyBuffer = ByteBuffer.allocateDirect(message.length);
+                bodyBuffer.put(message);
+                bodyBuffer.flip();
+                bodyFc.write(bodyBuffer);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
+    private synchronized void flush() {
+
+    }
+
     @Override
     synchronized Collection<byte[]> get(String queueName, long offset, long num) {
         Collection<byte[]> result = new LinkedList<>();
-        AtomicLong indexLong = getIndex(queueName);
-        if (indexLong == null || indexLong.get() < offset) {
-            return result;
-        }
         long currentOffset = offset;
         long currentNum = num;
         while (currentNum > 0) {
@@ -110,7 +123,7 @@ public class QueueStoreOne extends QueueStore {
 
     synchronized void get(Collection<byte[]> result, String queueName, long offset, long num) {
         try {
-            AtomicLong indexLong = getIndex(queueName);
+            AtomicLong indexLong = queueIndex.get(queueName);
             if (indexLong == null || indexLong.get() < offset) {
                 return;
             }
@@ -153,13 +166,15 @@ public class QueueStoreOne extends QueueStore {
     }
 
 
-    private long getHeaderOffset(String queueName, boolean isIncrement) {
-        long index = isIncrement ? getIndex(queueName).getAndIncrement() : getIndex(queueName).get();
+    private long getHeaderOffset(String queueName) {
+        long index = getIndex(queueName).getAndIncrement();
         int i = (int)(index / HEADER_BROKER);
         List<Long> headerBorker = queueHeader.computeIfAbsent(queueName, o -> new ArrayList<>());
         if (headerBorker.size() <= i) {
-            headerBorker.add(currentHeaderBroker);
-            currentHeaderBroker += HEADER_BROKER;
+            synchronized (this) {
+                headerBorker.add(currentHeaderBroker);
+                currentHeaderBroker += HEADER_BROKER;
+            }
         }
         long headerIndex = headerBorker.get(i);
         long offset = index % HEADER_BROKER;
