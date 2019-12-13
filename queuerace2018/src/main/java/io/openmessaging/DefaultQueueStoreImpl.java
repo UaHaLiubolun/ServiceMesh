@@ -16,12 +16,14 @@ public class DefaultQueueStoreImpl extends QueueStore {
     public static Collection<byte[]> EMPTY = new ArrayList<byte[]>();
     Map<String, List<byte[]>> queueMap = new ConcurrentHashMap<String, List<byte[]>>();
 
+    @Override
     public synchronized void put(String queueName, byte[] message) {
         if (!queueMap.containsKey(queueName)) {
             queueMap.put(queueName, new ArrayList<byte[]>());
         }
         queueMap.get(queueName).add(message);
     }
+    @Override
     public synchronized Collection<byte[]> get(String queueName, long offset, long num) {
         if (!queueMap.containsKey(queueName)) {
             return EMPTY;
